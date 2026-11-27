@@ -22,7 +22,8 @@
   "ratelimits": [{ "name": "AUTH_FAILURE_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }],
   "ai": { "binding": "AI" },
   "kv_namespaces": [{ "binding": "OAUTH_KV" }],
-  "r2_buckets": [{ "binding": "FTS_BUCKET", "bucket_name": "livesync-fts" }],
+  // The bucket is created by OpenTofu in yutakobayashidev/tofu-configuration (infra/services/main.tf).
+  "r2_buckets": [{ "binding": "FTS_BUCKET", "bucket_name": "garden" }],
   // Create with: wrangler vectorize create livesync-notes --dimensions=768 --metric=cosine
   "vectorize": [{ "binding": "VECTORIZE", "index_name": "livesync-notes" }],
   "durable_objects": {
