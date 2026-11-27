@@ -9,6 +9,7 @@
 | [2026-baku89-garden-concept.md](2026-baku89-garden-concept.md) | garden.ooo の設計原則、やらないこと、利用モード |
 | [2026-baku89-garden-data-sync.md](2026-baku89-garden-data-sync.md) | 三層のデータ構造、レプリケーション、変更通知、障害事例 |
 | [2026-baku89-garden-visibility.md](2026-baku89-garden-visibility.md) | 公開範囲、永続ページ、ダダ漏れの思想 |
+| [2026-baku89-garden-members-only.md](2026-baku89-garden-members-only.md) | GitHub Sponsors 連携のメンバー限定ブロック、Entitlement 構想 |
 | [2026-baku89-garden-series.md](2026-baku89-garden-series.md) | 順序つきの記事シリーズ、CMS 自作の勧め |
 | [2026-baku89-how-to-vibe-code-cms.md](2026-baku89-how-to-vibe-code-cms.md) | CMS 自作の 5 つの教訓 |
 | [2026-baku89-jisaku-cms-nakama.md](2026-baku89-jisaku-cms-nakama.md) | 自作 CMS のリンク集 |
@@ -40,6 +41,8 @@
 
 garden.ooo の公開範囲は、公開と非公開の二値ではなく、検索エンジン、サイト内の一覧、リンクを知っている人の三つの経路ごとに到達可否を分ける。Sate の「Private」チェック（一覧と検索から隠す）も、規模は小さいが同じ発想である。どちらも、一つの保管場所に私的なものと公的なものを混在させたまま、見える範囲を制御するという設計を選んでいる。
 
+garden.ooo はさらに、閲覧者が誰かによる制御も持つ。ページ単位の `protected` に加えて、公開ページの本文に `::gated` ブロックを混ぜ、GitHub Sponsors で支援した人が GitHub でログインしたときだけ中身を見せる。決済と会員管理は外部サービスに任せ、garden.ooo は「誰がどのコンテンツを見てよいか」（Entitlement）の判定だけを持つ、という役割分担が構想されている。
+
 ### 書く道具と公開の仕組みの分離
 
 Sate は公開ボタンに任意のコマンドを割り当てるだけで、公開の中身は利用者に任せる。加藤さんは、ブログ本体（GitHub の Markdown）と編集画面（Workers）を分けた。garden.ooo は Local mode と Server mode を分け、サーバーは公開や同期が必要になって初めて使う。書く場所と公開する場所を、データ形式（Markdown）だけを介して疎に結合する構成が繰り返し現れる。
@@ -58,7 +61,8 @@ garden.ooo の三層構造は、livesync-workers を使った構成と対応づ�
 2. **公開範囲は経路ごとに分ける**: 最初は `public` と `private` の二値で始めてよいが、`unlisted`（一覧とバックリンクに出さない）を加える余地をスキーマに残しておく。公開ページへの変更通知や一覧で、非公開化の事実を漏らさない配慮も必要になる。
 3. **変更の検出は `_changes` と seq で行う**: garden.ooo の SSE は、`seq` をイベント ID にして切断中の取りこぼしを再送で埋める。livesync-workers の `_changes?since=seq` は同じ性質を持つので、公開ビルダーは checkpoint として seq を保存し、差分だけを処理すればよい。garden.ooo の DB 再構築時の事故が示すとおり、VaultDO を作り直したときに checkpoint がサーバーの seq より先に進んでいたら、全件を再構築する保護を入れておくべきである。
 4. **CouchDB 互換であることの意味**: garden.ooo は単一ユーザー前提で rev tree を捨て、単一の整数 seq に簡素化した。livesync-workers は LiveSync プラグインとの互換のために rev tree を持つ。公開ビルダーが読むのは各文書の勝者リビジョンだけなので、rev tree の複雑さはビルダー側に漏れない。
-5. **バックアップを先に用意する**: 同期の不具合で全ページの 1 割が消えた garden.ooo の記録は、イシュー #3（vault データのバックアップ）の優先度を上げる根拠になる。公開を載せる前に、vault のバックアップと復元手順を確立しておくべきである。
+5. **限定公開は静的出力と相性が悪い**: 先に勧めた構成（公開ビルダーが静的な成果物を書き出し、閲覧は VaultDO に触れない）は、誰が見ても同じ内容のページを前提にしている。GitHub Sponsors 向けのような限定公開を載せるなら、限定部分を静的出力から除き、閲覧者を認証して Entitlement を判定する動的な経路を別に用意する必要がある。garden.ooo も `protected` のページを高速な HTML 経路から外し、アプリ側で判定している。限定公開は公開の初版には含めず、後から足せる形にしておくのが妥当である。
+6. **バックアップを先に用意する**: 同期の不具合で全ページの 1 割が消えた garden.ooo の記録は、イシュー #3（vault データのバックアップ）の優先度を上げる根拠になる。公開を載せる前に、vault のバックアップと復元手順を確立しておくべきである。
 
 ### 未解決の論点
 
