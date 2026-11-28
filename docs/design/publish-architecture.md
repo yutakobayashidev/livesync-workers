@@ -126,6 +126,15 @@ Obsidian ──LiveSync──▶ VaultDO
 | Email Sending | public beta、Paid | 不採用（当面） | Resend で代替 |
 | AI Search | GA | 不採用 | 既存の Vectorize と重なる |
 
+### 4.1 試したい機能のメモ
+
+| 機能 | 何に使うか | 実装の要点 | 注意点 |
+|---|---|---|---|
+| `Accept: text/markdown` で元の Markdown を返す | AI エージェントに、HTML ではなく Markdown でページを読ませる | builder が `pages/<slug>.md` を書き出し、site Worker が `Accept` を見て返し分ける。`Vary: Accept` を付ける | 公式の [Markdown for Agents](https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/) は Pro 以上で、HTML をエッジで変換するもの。こちらは元の Markdown を持っているので Free でも返せる。返すのは限定部分を除いた公開用の投影に限る |
+| `x402-hono` | 有料のページやブロックへの従量課金（#7） | Cloudflare Agents SDK に同梱の Hono ミドルウェアを `/_gated/*` に掛ける。MCP 向けには `paidTool` もある（[Agents payments](https://developers.cloudflare.com/agents/tools/payments/)） | 応答には常に `Cache-Control: private, no-store` を付ける（EmDash の x402 パッケージはキャッシュ用のヘッダーを付けない）。ステータスが beta か GA かの表記は確認できなかった |
+| Analytics Engine | 閲覧数の記録（garden.ooo の view count に相当） | site Worker から `writeDataPoint` でページごとに書き、SQL API で集計する。cookie を使わずに数えられる | Free プランで 1 日 10 万データポイントまで。課金が始まっているかは未確認 |
+| Cloudflare Access | 自分だけが見られる下書きプレビュー | site Worker の `/_preview/*` に Access のポリシーを掛け、`ctx.access.getIdentity()` で本人か確かめる（2026-08 から Worker 単位で保護できる。[Access for Workers](https://developers.cloudflare.com/workers/configuration/cloudflare-access/)） | パス単位の保護なので、ブロック単位の限定公開（#5）には使えない。プレビューの応答はキャッシュしない。Free プランの人数上限は未確認 |
+
 ## 5. 段階的な導入
 
 1. #3 のバックアップを決める。
